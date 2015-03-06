@@ -1,20 +1,91 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
+author: "Mario Maffioli"
+date: "Thursday, March 05, 2015"
 output: 
   html_document:
     keep_md: true
 ---
+## load required libraries
+```{r}
+library(dplyr,warn.conflicts = FALSE , quietly = TRUE)
 
+```
 
 ## Loading and preprocessing the data
 
+Unzip the activity file and load it into memory
+```{r}
+rm(list=ls())
+unzip("Activity.zip")
+activity_raw <- read.csv("activity.csv")
+
+
+```
+
+Preprocess data sets required for analysis
+```{r}
+activity_raw_bydate <- 
+    activity_raw %>% group_by(date)%>%
+    summarise(steps = sum(steps))
+
+activity_raw_byinterval <- 
+    activity_raw %>% group_by(interval)%>%
+    summarise(steps_mean = mean(steps, na.rm=T))
+
+```
 
 
 ## What is mean total number of steps taken per day?
 
+1. Total number of steps taken per day
+
+Table with total number of steps taken per day
+```{r}
+activity_raw_bydate
+
+```
+
+Create and display histogram
+```{r}
+hist(activity_raw_bydate$steps,xlab = "steps per day", main="Histogram Total Steps per Day", breaks=seq(0,25000,2500), col="red", ylim=c(0,20))
+
+```
+
+Compute mean and median for total number of steps
+```{r}
+mean(activity_raw_bydate$steps, na.rm=T)
+
+median(activity_raw_bydate$steps, na.rm=T)
+
+```
+
 
 
 ## What is the average daily activity pattern?
+
+Select interval with highest average number of steps
+```{r}
+max_step_mean <- filter(activity_raw_byinterval, 
+       steps_mean == max(steps_mean))
+max_step_mean
+```
+
+Plot time series of average steps per interval across all days
+```{r}
+x <- activity_raw_byinterval$interval
+y <- activity_raw_byinterval$steps_mean
+plot(x,y, type="l", xlab=" 5-minute interval ",
+     ylab="average number of steps taken",
+     main="Avg. Steps Taken per Interval - All Days", col= "blue", lwd=2)
+abline(v = 835, h= 206.1698, lty=2, col="red")
+grid(lwd = 2)
+
+
+
+
+```
+
 
 
 
