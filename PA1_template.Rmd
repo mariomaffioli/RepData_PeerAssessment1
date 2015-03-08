@@ -8,7 +8,10 @@ output:
 ---
 ## load required libraries
 ```{r}
-library(dplyr,warn.conflicts = FALSE , quietly = TRUE)
+library(dplyr, warn.conflicts = FALSE )
+library(xtable)
+library(chron)
+library(lattice)
 
 ```
 
@@ -27,11 +30,74 @@ Preprocess data sets required for analysis
 ```{r}
 activity_raw_bydate <- 
     activity_raw %>% group_by(date)%>%
-    summarise(steps = sum(steps))
+    summarise(steps = sum(steps, na.rm=T))
 
 activity_raw_byinterval <- 
     activity_raw %>% group_by(interval)%>%
     summarise(steps_mean = mean(steps, na.rm=T))
+
+
+# replace NA step values with corresponding interval mean
+
+activity_no_na <- activity_raw
+
+# convert interval id to factors
+activity_no_na$interval  <- as.factor(activity_no_na$interval)
+
+# create named vector to use as look-up table
+named_means_vector <- 
+    activity_raw_byinterval$steps_mean
+names(named_means_vector) <- 
+    activity_raw_byinterval$interval
+
+# Extract indices of rows with NA values in steps
+indx <- which(is.na(activity_raw$steps))
+
+# Replace NA values with corresponding interval means
+activity_no_na[indx,]$steps <- 
+        named_means_vector[activity_no_na[indx,]$interval ]
+
+activity_noNA_bydate <- 
+    activity_no_na %>% group_by(date)%>%
+    summarise(steps = sum(steps, na.rm=T))
+
+
+# create augmented data frame with wend column
+activity_no_na_day <- 
+    activity_no_na %>%
+        mutate(day=is.weekend(as.Date(date)))
+
+# convert Wend  to factor
+activity_no_na_day$day  <- as.factor(activity_no_na_day$day)
+
+# label factor levels
+levels(activity_no_na_day$day) <- 
+    c("weekday", "weekend")
+
+activity_no_na_day_byinterval <- 
+    activity_no_na_day %>% group_by(interval, day)%>%
+    summarise(steps_mean = mean(steps))
+
+
+
+
+# activity_no_na_wday <- 
+#     filter(activity_no_na_day, day=="weekday" )
+# 
+# activity_no_na_wend <- 
+#     filter(activity_no_na_day, day=="weekend" )
+# 
+# activity_no_na_wday_byinterval <- 
+#     activity_no_na_wday %>% group_by(interval)%>%
+#     summarise(steps_mean = mean(steps, na.rm=T))
+# 
+# activity_no_na_wend_byinterval <- 
+#     activity_no_na_wend %>% group_by(interval)%>%
+#     summarise(steps_mean = mean(steps, na.rm=T))
+# 
+# rm(activity_no_na_wday)
+# rm(activity_no_na_wend)
+
 
 ```
 
@@ -41,14 +107,24 @@ activity_raw_byinterval <-
 1. Total number of steps taken per day
 
 Table with total number of steps taken per day
-```{r}
-activity_raw_bydate
+```{r xtable, results = 'asis'}
+
+tbl <- xtable(activity_raw_bydate,
+           caption="Fig. 1.0\n Steps by date")
+align(tbl) <- "|r|r|r|"
+print (tbl,
+      NA.string="NA",
+      type = "html"
+      )
 
 ```
 
+
 Create and display histogram
 ```{r}
-hist(activity_raw_bydate$steps,xlab = "steps per day", main="Histogram Total Steps per Day", breaks=seq(0,25000,2500), col="red", ylim=c(0,20))
+par(mfrow = c(1,1))
+hist1 <- hist(activity_raw_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day", col="red", ylim=c(0,25))
+
 
 ```
 
@@ -63,6 +139,20 @@ median(activity_raw_bydate$steps, na.rm=T)
 
 
 ## What is the average daily activity pattern?
+
+Table showing first 20 rows of average number of steps taken per interval
+```{r xtable2, results = 'asis'}
+
+tbl2 <- xtable(head(activity_raw_byinterval,20),
+           caption="Fig. 2.0\n Steps by interval")
+align(tbl2) <- "|r|c|r|"
+print (tbl2,
+      NA.string="NA",
+      type = "html"
+      )
+
+```
+
 
 Select interval with highest average number of steps
 ```{r}
@@ -81,16 +171,67 @@ plot(x,y, type="l", xlab=" 5-minute interval ",
 abline(v = 835, h= 206.1698, lty=2, col="red")
 grid(lwd = 2)
 
+```
+
+## Imputing missing values
+
+Find total number of NA's in steps column of raw activity file
+```{r}
+sum(is.na(activity_raw$steps))
+
+```
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+*Strategy*
+
+1. Make a copy of the raw activity data frame.
+2. Extract from this copy the indices of the rows with NA values in the 'steps' column.
+3. Using the 'activity_raw_byinterval' data frame, create a named vector with the interval means as values and the interval-id as the names. This vector will the used as a look-up table in the next step.
+4. Assign the corresponding interval mean to the 'steps' NA value, thus imputing  the interval mean as a replacement for the NA value.
 
 
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r xtable3, results = 'asis'}
+
+tbl3 <- xtable(head(activity_no_na,20),
+           caption="Fig. 3.0\n Activity without NAs")
+align(tbl3) <- "|r|r|c|r|"
+print (tbl3,
+      type = "html"
+      )
+
+```
+
+Make a histogram of the total number of steps taken each day (with the imputed NA values)
+```{r}
+op <- par(mfrow = c(1, 2), bg = "lightyellow")
+
+plot(hist1,xlab = "steps per day", main="Total Steps per Day", col="red", ylim=c(0,30))
+
+hist2 <- hist(activity_noNA_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day (imputeds NA's)", col="cornflowerblue", ylim=c(0,30))
+
+par(op)
+
+# colors()[grep("yellow",colors())]
+
+```
+
+Compute mean and median for total number of steps
+```{r}
+mean(activity_noNA_bydate$steps)
+
+median(activity_noNA_bydate$steps)
+
+```
+## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+activity_no_na_day_byinterval$interval <- as.integer(activity_no_na_day_byinterval$interval)
+
+# With Latice
+xyplot(steps_mean ~ interval | day, data=activity_no_na_day_byinterval, type = "l", layout = c(1, 2),ylab="avg. number steps", main="Average Steps by Five Minute Interval")
 
 ```
 
 
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
