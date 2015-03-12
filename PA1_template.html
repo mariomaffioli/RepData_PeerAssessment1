@@ -81,10 +81,12 @@ library(lattice)</code></pre>
 unzip(&quot;Activity.zip&quot;)
 activity_raw &lt;- read.csv(&quot;activity.csv&quot;)</code></pre>
 <p>Preprocess data sets required for analysis</p>
-<pre class="r"><code>activity_raw_bydate &lt;- 
+<pre class="r"><code># Summarize raw data to determine steps per date
+activity_raw_bydate &lt;- 
     activity_raw %&gt;% group_by(date)%&gt;%
     summarise(steps = sum(steps, na.rm=T))
 
+# Summarize raw data to get the mean of steps per interval
 activity_raw_byinterval &lt;- 
     activity_raw %&gt;% group_by(interval)%&gt;%
     summarise(steps_mean = mean(steps, na.rm=T))
@@ -94,7 +96,7 @@ activity_raw_byinterval &lt;-
 
 activity_no_na &lt;- activity_raw
 
-# convert interval id to factors
+# convert interval ids to factors
 activity_no_na$interval  &lt;- as.factor(activity_no_na$interval)
 
 # create named vector to use as look-up table
@@ -110,10 +112,10 @@ indx &lt;- which(is.na(activity_raw$steps))
 activity_no_na[indx,]$steps &lt;- 
         named_means_vector[activity_no_na[indx,]$interval ]
 
+# summarize imputed NA file to get steps per day
 activity_noNA_bydate &lt;- 
     activity_no_na %&gt;% group_by(date)%&gt;%
     summarise(steps = sum(steps, na.rm=T))
-
 
 # create augmented data frame with wend column
 activity_no_na_day &lt;- 
@@ -127,29 +129,20 @@ activity_no_na_day$day  &lt;- as.factor(activity_no_na_day$day)
 levels(activity_no_na_day$day) &lt;- 
     c(&quot;weekday&quot;, &quot;weekend&quot;)
 
+# summarize imputed NA file by interval and week day
 activity_no_na_day_byinterval &lt;- 
     activity_no_na_day %&gt;% group_by(interval, day)%&gt;%
     summarise(steps_mean = mean(steps))
 
+# Compute means by date for both raw and imputed NA data sets
+means &lt;- c(mean(activity_raw_bydate$steps, na.rm=T), mean(activity_noNA_bydate$steps))
 
+# Compute medians for raw and imputed NA data sets
+medians &lt;- c(median(activity_raw_bydate$steps, na.rm=T), median(activity_noNA_bydate$steps))
 
-
-# activity_no_na_wday &lt;- 
-#     filter(activity_no_na_day, day==&quot;weekday&quot; )
-# 
-# activity_no_na_wend &lt;- 
-#     filter(activity_no_na_day, day==&quot;weekend&quot; )
-# 
-# activity_no_na_wday_byinterval &lt;- 
-#     activity_no_na_wday %&gt;% group_by(interval)%&gt;%
-#     summarise(steps_mean = mean(steps, na.rm=T))
-# 
-# activity_no_na_wend_byinterval &lt;- 
-#     activity_no_na_wend %&gt;% group_by(interval)%&gt;%
-#     summarise(steps_mean = mean(steps, na.rm=T))
-# 
-# rm(activity_no_na_wday)
-# rm(activity_no_na_wend)</code></pre>
+# build data frame for mean and median comparison
+compare_mean_median &lt;- data_frame(mean=means, median=medians)
+rownames(compare_mean_median) &lt;- c(&quot;with NAs&quot;,&quot;imputed NAs&quot;)</code></pre>
 </div>
 <div id="what-is-mean-total-number-of-steps-taken-per-day" class="section level2">
 <h2>What is mean total number of steps taken per day?</h2>
@@ -165,7 +158,7 @@ print (tbl,
       type = &quot;html&quot;
       )</code></pre>
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:19 2015 -->
+<!-- Thu Mar 12 06:12:43 2015 -->
 <table border="1">
 <caption align="bottom">
 Fig. 1.0 Steps by date
@@ -856,11 +849,6 @@ steps
 <pre class="r"><code>par(mfrow = c(1,1))
 hist1 &lt;- hist(activity_raw_bydate$steps, breaks=seq(0,25000,2500),xlab = &quot;steps per day&quot;, main=&quot;Total Steps/Day&quot;, col=&quot;red&quot;, ylim=c(0,25))</code></pre>
 <p><img src="data:image/png;base64,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" /></p>
-<p>Compute mean and median for total number of steps</p>
-<pre class="r"><code>mean(activity_raw_bydate$steps, na.rm=T)</code></pre>
-<pre><code>## [1] 9354.23</code></pre>
-<pre class="r"><code>median(activity_raw_bydate$steps, na.rm=T)</code></pre>
-<pre><code>## [1] 10395</code></pre>
 </div>
 <div id="what-is-the-average-daily-activity-pattern" class="section level2">
 <h2>What is the average daily activity pattern?</h2>
@@ -873,7 +861,7 @@ print (tbl2,
       type = &quot;html&quot;
       )</code></pre>
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:19 2015 -->
+<!-- Thu Mar 12 06:12:44 2015 -->
 <table border="1">
 <caption align="bottom">
 Fig. 2.0 Steps by interval
@@ -1140,7 +1128,7 @@ grid(lwd = 2)</code></pre>
 <li>Using the ‘activity_raw_byinterval’ data frame, create a named vector with the interval means as values and the interval-id as the names. This vector will the used as a look-up table in the next step.</li>
 <li>Assign the corresponding interval mean to the ‘steps’ NA value, thus imputing the interval mean as a replacement for the NA value.</li>
 </ol>
-<p>Create a new dataset that is equal to the original dataset but with the missing data filled in.</p>
+<p>Create a new dataset that is equal to the original dataset but with the missing data filled in. THe table below shows the first 20 rows of data with imputed NAs.</p>
 <pre class="r"><code>tbl3 &lt;- xtable(head(activity_no_na,20),
            caption=&quot;Fig. 3.0\n Activity without NAs&quot;)
 align(tbl3) &lt;- &quot;|r|r|c|r|&quot;
@@ -1148,7 +1136,7 @@ print (tbl3,
       type = &quot;html&quot;
       )</code></pre>
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:20 2015 -->
+<!-- Thu Mar 12 06:12:44 2015 -->
 <table border="1">
 <caption align="bottom">
 Fig. 3.0 Activity without NAs
@@ -1454,17 +1442,57 @@ plot(hist1,xlab = &quot;steps per day&quot;, main=&quot;Total Steps per Day&quot
 
 hist2 &lt;- hist(activity_noNA_bydate$steps, breaks=seq(0,25000,2500),xlab = &quot;steps per day&quot;, main=&quot;Total Steps/Day (imputeds NA's)&quot;, col=&quot;cornflowerblue&quot;, ylim=c(0,30))</code></pre>
 <p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAMAAABNUi8GAAAANlBMVEUAAABNTURkle1oaFt8fG2MjHuamoenp5Oysp29vabHx67Q0LfZ2b7h4cXp6czw8NP/AAD//+Bq1wMuAAAACXBIWXMAAA7DAAAOwwHHb6hkAAASh0lEQVR4nO2diZaquhZF47OpY2np5f9/9iltaKSRDVmBOce5VZSETbKYIKBXXQIgjAvdAYA+EBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWkQFKRBUJAGQUEaBAVpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWkQFKRBUJAGQUEaBAVpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQZrlBXUVzVmXVsty+np6/XW+dbYz6tHpn23ZrzqxQixPd5wy5Ls7JR2d6qW7J51VXg8e/Jk/r4mfruYnd08fndSRb/i4Je4H12qZTz2P+RI/Xe3MenR42Bb+qhOLx3JzlylDPrjfiYJ+6sknQd3Nm3kojG02/81FntCR7/i4JXoe+CkXuX0Yp02PjraFv+vE0rH8c9cJQ75OT/tTTz4Keqxm3tNO3buau1e/1zoH9dZ9fz1Jne5JsYWS5O/iqkeq9r+vA8bZZU832Yzr0R2v+dzHpXhiuL8aucuft6ZqXm2R2+FVzO/Nb74vlx0oduWD9R7xiXViObu/CUM+vlNKm2f1Drfk7+QO18YK8oLvX+2evHalg7s8skfbG8i9OlQUeO1z57zk2Z1rzU+ZyHZx99A6CPwrt8S965iQTz398WdLnrK5h2L6N1/8Xi1Zzmstcq735po+UnXgJytzL/1emnViyWUbN+R7etwqBE3rZWv4ra+gQ9CqJ8n7TDlt+2EDncsCr0bPfC/59+6D1/ya/lxZ0L/XCJ7Pk7cPHd9Df6SH/WpLvPbTw7+/2sK39+a7FvGdnu8QftMBPt6pHqvG5bzGIq8tW+9NlkzVgXwz/VRpLswqsfyVh8QxQ/5X9eH14/Ku//r5W3SkXIEnaLsn16Kh69xAr9nPfKH7u/rFC7zW8XSHXTD/ijLjrC9pt6oHH9eT83fzV46HbG/8rRY+pz9dnnZWJNsRr8/6msp5rUWavSkmig4c0135sNqp6Sqx/L4VHD3k81uQ6ine+9laQVmu1ZNT0dB1bqDX6n7yhX7eh/Gb95TlNX9kK7IKu5cyn0MxrkP54O1UPEdUW+K1Jx/9p67Eu6ioh3Outpi/pqJdV+nm1qo6cM3jui4WRJ1VYvmpnSYMDbmsWptMWitoT0/YQNfsxCB57x/ZouUhwW+e1TLKup/mDuwN4/p+2nq0LUoet9eZdnVI+TD+Rxb14Z50rqBX0Oz5zuvAM3/C8ff4JVkllmN5BBwzZHNBOzfQ4f0079KDZE5x98tvHkLQ9qHiWHsKScpmz/b4G9XyX3/pUeXYMa+9SP2PW/oc4nUg3VLltdTyrBJLrdngkGcJOtCTat41v4L6VwpavYJQNQ8haPtkq9iPa1vikp5lp5d0xcPnai9z3rlQyqNa0tXPQR/NDnh/3A7VRXLWgXT7ZTdiVmGNWP7SP0cPeUDQxjnoo7snZ+8ctOqJv4JDdqgtXnho3J59+Cs1yHmYsn/3jsvV10XhpbEl/sqOl1vs9p4uwymvJo/vLP4+XsVf6uf0ZRsvFq8D/usaa7BGLFd3nTLkU/PIXRe0XMHpfWHz9K/ivJ78FsNxnRsoye8mvUU8eWtNklrzIBdJxQ2/91XbJQ36mv6d3l3wLCpeMzk8i3ZJfnKSxVfejyu2Wed90Noitd64co7fgew5Z72X6NeI5eyq2/8jhpzdcPooaLmCsoTr6Il/H7RjA71/vY+d71Vnl0O/ZRe85tktsLUFTS8g0xdIksc53UXS1x/Sc3Xfonv6Wsc/r136RonLI6v2vLhDdmvicTk0Xqio5tUWqfUmzTm/cq06kD25rPcC/RqxHNLT1tFDrt+oT5qCVit4lTj8ZKcJrZ6knhevJLU3UDre9+9jseZHdYStmv/LTkcsgl6Zmm0T5o3gWTzpRMiXQ28M+fj5GnFmtlM5pWceCFrjUjzpRMiXQ28MuefNIisLuuabRWxZTND3s2DANzjN5Kuht4d8/HgXY11Bb1m/ENTj4A6XtW7S2/PV0NtDvn88yVlX0NXesAwwAwQFaRAUpEFQkAZBQRoEBWkQFKRBUJAGQUEaBAVpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWkQFKRBUJAGQUEaBAVpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWkmClp81Pkyndkf5DnEtGhcawLmQJ6DTErGdU7Ct5DnMAgaEPIcBkEDQp7DcA4aEvIchKv4oJDnEEQD0tgIWn4VJL6bQJ4l3yTQkxuBfgF59jDxIumdpetZjEAnQZ6DTL7NlO/tH5Yj0CmQ5zDT74MSqBnkOQyCBoQ8h/n2Rj2BWkCeg0y9UZ//4qTeBvIcwjgBArWFPBFUGvJEUGnIE0GlIU8ElYY8EVQa8kRQacgTQaUhTwSVhjwRVBryRFBpyBNBpSFPBJWGPBFUGvJEUGnIE0GlIU8ElYY8EVQa8kRQacgTQaUhTwSVhjwRVBryRFBpyBNBpSFPBJWGPBFUGvJEUGnIE0GlIU8ElYY8EVQa8kRQaRbL03Wx1MrmMP0TlpO+oUiOUZaAebr/tZHceF9+BDgfuGpBwDy3K6irJueW2z0B80RQGAZBh0HQgCDoMNMEzb8XjXNQGwLmuU1BkyT/Xkmu4q0IledmBV233O5BUJtOad/rjY/l89yqoGVkXCSZECzPjQqani/13VmWHKMu4fLcpqDe3o6gBgTMc9OCvn8jqAEB89y2oIlDUAsC5rlNQb1EEdSCcHluVFB/n7cot3uC5blVQVcut3sQFEGlQVAElQZBEVQaBEVQaRAUQaVBUASVBkERVBoERVBpEBRBpUFQBJUGQRFUGgRFUGkQFEGlQVAElQZBEVQaBEVQaRAUQaVBUASVBkERVBoERVBpEBRBpUFQBJUGQRFUGgRFUGkQFEGlQVAElQZBEVQaBEVQaRAUQaVBUASVBkEndmro21EkxyhMsDw3KqhrTcwqt3vC5blNQV3n5Nfldk/APBEUhkHQYRA0IAg6DOegIeEcdBCu4oPCVfwQ3AeVBkFtOsXXcdvC13GXTH+K711OcozC8HXcQ0y/SOLruO0Il+c2BfX2dgQ1IGCemxb0/RtBDQiY57YFTfg6bhMC5rlNQb1EEdSCcHluVNDBlz4kxyhMsDy3KujK5XYPgiKoNAhadcrkVQvJMYZBO88IBfVe1rApt3uU84xS0GR+ppJjDIhsnrEKmszMVHKMYdHMM1ZBszS/76nkGAMim2ecgg68tWZqud0jnGeEgpq8+VByjGHQzjNCQRXL7R4Edc1J0avOCJHOM0JBXeuRWeWMcV0stTITxPNEUFvcf20kAy0RzxNBbUFQWyIUVPycKTpBxfOMUNDE4LwOQT2k84xRUL1yXuEIBTUAQRFUGgRFUGkQ1L9IMri7iKAV2nnGJ6hJ9xC0RDxPBLUFQW1BUGMQ1JYIBTUJA0ErtPOMT1CTt2AgaIl4nvEJqljOKxydoCYgKIJKg6CN1+LnJoKgHtJ5RiioK/7ZlLMlQkG184xPUOf9Z1DOmPgEFc8TQW1BUFu2KWj+FtwgXzy1RUFD5hmfoCPOmVz9R385W+ITVDzPCAUdfge4d0D40A5BPaTzjFHQUY0R1A4EHQZBA4Kgw0wTtLzzzDmoBSHzjE/QcW9uGPg8QQQtEc8zPkE/PTCvnBXxCZqjmme0gn6VyQpfHx2roKp57ktQm4V7C+9KUJuFewsjqC0IakuEgo54Uhn+6EMELRHPMz5BTVoj6CQC5rlNQQebI+g0wuUZn6DjPrp4YBAIWiKeZ3yCDrymMbmcLfEJKp5nfIK61iOzyhkTn6DieSKoLQhqC4Iag6C2RCio+DlTdIKK5xmhoNqfqR6foNp5xiioXjmvcISCGoCgCCoNgjae4ucmgqAe0nlGKKgr/tmUsyVCQbXzjE9Q5/1nUM6Y+AQVzxNBbUFQWxDUGAS1JUJBxc+ZohNUPM8IBdW+sRyfoNp5xiioXjmvcISCGoCg7TeLGJUzJj5BxfNEUFsQ1JYIBTUJA0ErtPOMT1DxL56KTlDxPOMTVLGcVzg6QU1AUASVBkFd7ZdVOXsiE1Q/zygFnd9DBM3QzxNBbUFQWxDUGAS1BUGNQVBbENQYBLUFQY1BUFuiE3TUR7GNLmdPbILK5xmZoNblXBezCsclqBUIupSg1j4hqHHhjQo6dDBE0GmMzdN+xdsU1LUmPjRA0FGMztN+zZsUdPjNowg6hfF52q8aQRF0EAQdBkEDgqDDcA4aEs5BB+EqPihcxQ/BfVBpENSmU61Xi9YR1PrlKhmWH06noIp5Rn0E3f5RdV1BFY+qCCoNgk67zTR46EfQKYzP037VmxR0uDWCTmJ0nvZr3qagg80RdBpj87Rf8UYFHWqPoBMZmaf9ercq6MhyCGoDgiKoNAiKoNIgKIJKg6AIKg2CIqg0CIqg0iAogkqDoAgqDYIiqDQIiqDSICiCSoOgCCoNgiKoNAiKoNIgKIJKg6AIKg2CIqg0CIqg0iAogkqDoAgqDYIqCtr5GUEI+n2RLhB0hqBjZUTQcUXGyoigI4sgaAGCIqg0CIqg0iAogkqDoAgqDYIiqDQIiqDSIOjmBFX8IoDvCS9o6Dw3J+icFesRXtDQR1UElQZBEVQaBEVQaRAUQaVBUASVBkEnrSxr3HejAUGnMD7PeavZl6DVj55yCDqG8XnOW82uBHW9yyHoFMbnOW81CNp6kWGsJ50vVCDo1y/adOeJoK1yowXtaDdPxk0IWmsxqWKHT/NkjEvQ1x7tehdD0CmMz3N0xX0LmmSZ9iyFoBMZmefocrsXdGQ5BLUBQRFUGgRFUGkQFEGlQVAElQZBEVQaBEVQaRAUQaVBUASVBkERVBoERVBpEBRBpUFQBJUGQRFUGgRFUGnKPEd+RBKCjiyHoDaUeY70BEFHlkNQGxAUQaVBUASVBkERVBoERVBpEBRBpUFQBJUGQRFUGgRdU9CRH8O0iqDBv71iHL2CjvwYplUEXSzPNQUd+dg6go5sF5heQUc+to6gI9t9nYARCGoLgiJof7vAICiC9rcLDIIiaH+7wCAogva3CwyCImh/u8AgKIL2twsMgiJof7vAICiC9rcLDIIiaH+7wCAogva3CwyCImh/u8AgKIL2twsMgk4sMvRGKgSdxug8Z/i0J0Fda+JDAwQdxfg8Z/i0I0Fd52RXCwQdw4Q8Z/iEoEnHtx1vhrkBk2edGRnNCBS+gjyHMT4HhUmQ5yDGV/EwDfIcgmhAGgQFaRAUpEFQkAZBQRoEBWkQFKRBUJBmIUHDvM67BMvkM5XQKdgxeeRLxDm+7OjVWxc07+Cy7DdPBLVptzD7zRNBbdotzH7zRFCbdguz3zwR1Kbdwuw3TwS1abcw+80TQW3aLcx+80RQm3YLs988EdSm3cLsN0+RDQDQDYKCNAgK0iAoSIOgIA2CgjQICtIgKEiDoCANgoI0CArSIChIg6AgzSKCfv6/S6v/9bRs056YsCLTol4Vy07OZ895LhG3+1zXtdq0JyasyFkWrS1k18n57DrPBdJujLJzdWWb9sSUFdUXmle0amvayfnsO891BXWtNjMCLRZapKhVPQP2nefKgpYnI0WbedvemRd19p2cy77zDHAEdYlxoIZFyzKGnZzLvvNcV9CygWWglkWdP6UvaNlgu3ki6JL1TNh3ngjaXQ5BRfJcV9CeLn4fqFlRt0wn57LvPJcI232uW87qmZi4JrOizp8w7ORsdp3nImn3vH7V82LX9x+/a1LU+wRg207OZ895BogbYDwICtIgKEiDoCANgoI0CArSIChIg6AgDYKCNAgK0iAoSIOgIA2CgjQICtIgKEiDoCANgoI0CArSIChIg6AgDYKCNAgK0iAoSIOgIA2CgjQICtIgKEizWUE3O7BAhMpTczsa9EpzYIGIOE/N7RhxoJJEnKfYdsw+sC//2L7yyyGKz+hz1Yf1udYn+Lmkmunyr/zJy+VL7JD489TabMWHmtY+3NQ574/qIyyTrmZlFX/+fgXdQJ5am815v8sYGhN+y865rVn+htgXG8hTa7vZBpr+Kp6TtAa6EhvIU2y7FWdL+WTjlKd2zpT/bDRLGu3LrMUGuhLx5ym43ZoJ1E95XOPBRrP2rKyW4DjXIu48BTdcLVA3LtDecyYEjThPrQ3n8h/F7/yJxfujOhdKms1qVconKbdnQTeQp9iGq92xm3rfzq9SnWM1Z+6K+POMYMt1dnFivyMY5mrElWcEWy6uQPWJK88Ittz8QEN8O5wuceXJpgNpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWkQFKRBUJAGQUEaBAVpEBSkQVCQBkFBGgQFaRAUpEFQkAZBQRoEBWn+D8TC01tOAb7iAAAAAElFTkSuQmCC" /></p>
-<pre class="r"><code>par(op)
-
-# colors()[grep(&quot;yellow&quot;,colors())]</code></pre>
-<p>Compute mean and median for total number of steps</p>
-<pre class="r"><code>mean(activity_noNA_bydate$steps)</code></pre>
-<pre><code>## [1] 10766.19</code></pre>
-<pre class="r"><code>median(activity_noNA_bydate$steps)</code></pre>
-<pre><code>## [1] 10766.19</code></pre>
+<pre class="r"><code>par(op)</code></pre>
+<p>Compare means and medians with/without NAs</p>
+<pre class="r"><code>tbl4 &lt;- xtable(compare_mean_median,
+           caption=&quot;Fig. 4.0\n Mean and medians with/without NAs&quot;)
+align(tbl4) &lt;- &quot;|l|c|c|&quot;
+print (tbl4,
+      type = &quot;html&quot;
+      )</code></pre>
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Mar 12 06:12:45 2015 -->
+<table border="1">
+<caption align="bottom">
+Fig. 4.0 Mean and medians with/without NAs
+</caption>
+<tr>
+<th>
+</th>
+<th>
+mean
+</th>
+<th>
+median
+</th>
+</tr>
+<tr>
+<td>
+with NAs
+</td>
+<td align="center">
+9354.23
+</td>
+<td align="center">
+10395.00
+</td>
+</tr>
+<tr>
+<td>
+imputed NAs
+</td>
+<td align="center">
+10766.19
+</td>
+<td align="center">
+10766.19
+</td>
+</tr>
+</table>
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+<p>Panel plot of mean steps per interval for both weekends and weekdays</p>
 <pre class="r"><code>activity_no_na_day_byinterval$interval &lt;- as.integer(activity_no_na_day_byinterval$interval)
 
 # With Latice

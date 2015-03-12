@@ -23,10 +23,12 @@ activity_raw <- read.csv("activity.csv")
 Preprocess data sets required for analysis
 
 ```r
+# Summarize raw data to determine steps per date
 activity_raw_bydate <- 
     activity_raw %>% group_by(date)%>%
     summarise(steps = sum(steps, na.rm=T))
 
+# Summarize raw data to get the mean of steps per interval
 activity_raw_byinterval <- 
     activity_raw %>% group_by(interval)%>%
     summarise(steps_mean = mean(steps, na.rm=T))
@@ -36,7 +38,7 @@ activity_raw_byinterval <-
 
 activity_no_na <- activity_raw
 
-# convert interval id to factors
+# convert interval ids to factors
 activity_no_na$interval  <- as.factor(activity_no_na$interval)
 
 # create named vector to use as look-up table
@@ -52,10 +54,10 @@ indx <- which(is.na(activity_raw$steps))
 activity_no_na[indx,]$steps <- 
         named_means_vector[activity_no_na[indx,]$interval ]
 
+# summarize imputed NA file to get steps per day
 activity_noNA_bydate <- 
     activity_no_na %>% group_by(date)%>%
     summarise(steps = sum(steps, na.rm=T))
-
 
 # create augmented data frame with wend column
 activity_no_na_day <- 
@@ -69,29 +71,20 @@ activity_no_na_day$day  <- as.factor(activity_no_na_day$day)
 levels(activity_no_na_day$day) <- 
     c("weekday", "weekend")
 
+# summarize imputed NA file by interval and week day
 activity_no_na_day_byinterval <- 
     activity_no_na_day %>% group_by(interval, day)%>%
     summarise(steps_mean = mean(steps))
 
+# Compute means by date for both raw and imputed NA data sets
+means <- c(mean(activity_raw_bydate$steps, na.rm=T), mean(activity_noNA_bydate$steps))
 
+# Compute medians for raw and imputed NA data sets
+medians <- c(median(activity_raw_bydate$steps, na.rm=T), median(activity_noNA_bydate$steps))
 
-
-# activity_no_na_wday <- 
-#     filter(activity_no_na_day, day=="weekday" )
-# 
-# activity_no_na_wend <- 
-#     filter(activity_no_na_day, day=="weekend" )
-# 
-# activity_no_na_wday_byinterval <- 
-#     activity_no_na_wday %>% group_by(interval)%>%
-#     summarise(steps_mean = mean(steps, na.rm=T))
-# 
-# activity_no_na_wend_byinterval <- 
-#     activity_no_na_wend %>% group_by(interval)%>%
-#     summarise(steps_mean = mean(steps, na.rm=T))
-# 
-# rm(activity_no_na_wday)
-# rm(activity_no_na_wend)
+# build data frame for mean and median comparison
+compare_mean_median <- data_frame(mean=means, median=medians)
+rownames(compare_mean_median) <- c("with NAs","imputed NAs")
 ```
 
 
@@ -112,7 +105,7 @@ print (tbl,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:19 2015 -->
+<!-- Thu Mar 12 06:12:43 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 1.0
  Steps by date </caption>
@@ -190,25 +183,6 @@ hist1 <- hist(activity_raw_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps 
 
 ![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
-Compute mean and median for total number of steps
-
-```r
-mean(activity_raw_bydate$steps, na.rm=T)
-```
-
-```
-## [1] 9354.23
-```
-
-```r
-median(activity_raw_bydate$steps, na.rm=T)
-```
-
-```
-## [1] 10395
-```
-
-
 
 ## What is the average daily activity pattern?
 
@@ -225,7 +199,7 @@ print (tbl2,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:19 2015 -->
+<!-- Thu Mar 12 06:12:44 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 2.0
  Steps by interval </caption>
@@ -280,7 +254,7 @@ abline(v = 835, h= 206.1698, lty=2, col="red")
 grid(lwd = 2)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 
 ## Imputing missing values
 
@@ -304,7 +278,8 @@ Devise a strategy for filling in all of the missing values in the dataset. The s
 4. Assign the corresponding interval mean to the 'steps' NA value, thus imputing  the interval mean as a replacement for the NA value.
 
 
-Create a new dataset that is equal to the original dataset but with the missing data filled in.
+Create a new dataset that is equal to the original dataset but with the missing data filled in. THe table below shows the first 20 rows of data with imputed NAs.
+
 
 ```r
 tbl3 <- xtable(head(activity_no_na,20),
@@ -316,7 +291,7 @@ print (tbl3,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Sat Mar 07 18:54:20 2015 -->
+<!-- Thu Mar 12 06:12:44 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 3.0
  Activity without NAs </caption>
@@ -353,32 +328,37 @@ plot(hist1,xlab = "steps per day", main="Total Steps per Day", col="red", ylim=c
 hist2 <- hist(activity_noNA_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day (imputeds NA's)", col="cornflowerblue", ylim=c(0,30))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
 
 ```r
 par(op)
-
-# colors()[grep("yellow",colors())]
 ```
 
-Compute mean and median for total number of steps
 
-```r
-mean(activity_noNA_bydate$steps)
-```
-
-```
-## [1] 10766.19
-```
+Compare means and medians with/without NAs
 
 ```r
-median(activity_noNA_bydate$steps)
+tbl4 <- xtable(compare_mean_median,
+           caption="Fig. 4.0\n Mean and medians with/without NAs")
+align(tbl4) <- "|l|c|c|"
+print (tbl4,
+      type = "html"
+      )
 ```
 
-```
-## [1] 10766.19
-```
+<!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
+<!-- Thu Mar 12 06:12:45 2015 -->
+<table border=1>
+<caption align="bottom"> Fig. 4.0
+ Mean and medians with/without NAs </caption>
+<tr> <th>  </th> <th> mean </th> <th> median </th>  </tr>
+  <tr> <td> with NAs </td> <td align="center"> 9354.23 </td> <td align="center"> 10395.00 </td> </tr>
+  <tr> <td> imputed NAs </td> <td align="center"> 10766.19 </td> <td align="center"> 10766.19 </td> </tr>
+   </table>
+
 ## Are there differences in activity patterns between weekdays and weekends?
+
+Panel plot of mean steps per interval for both weekends and weekdays
 
 
 ```r
@@ -388,6 +368,6 @@ activity_no_na_day_byinterval$interval <- as.integer(activity_no_na_day_byinterv
 xyplot(steps_mean ~ interval | day, data=activity_no_na_day_byinterval, type = "l", layout = c(1, 2),ylab="avg. number steps", main="Average Steps by Five Minute Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-11-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
 
 
