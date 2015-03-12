@@ -117,6 +117,15 @@ Create and display histogram
 ```{r}
 par(mfrow = c(1,1))
 hist1 <- hist(activity_raw_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day", col="red", ylim=c(0,25))
+text(11000, 23, "mean 9354",cex = .8)
+text(10500, 21, "median 10395",cex = .8)
+
+```
+
+Report mean and median steps taken per day
+```{r}
+mean(activity_raw_bydate$steps, na.rm=T)
+median(activity_raw_bydate$steps, na.rm=T)
 
 ```
 
@@ -153,6 +162,8 @@ plot(x,y, type="l", xlab=" 5-minute interval ",
      ylab="average number of steps taken",
      main="Avg. Steps Taken per Interval - All Days", col= "blue", lwd=2)
 abline(v = 835, h= 206.1698, lty=2, col="red")
+text(900, 2, "interval 835",cex = .8)
+text(1400, 200, "206 steps per interval",cex = .8)
 grid(lwd = 2)
 
 ```

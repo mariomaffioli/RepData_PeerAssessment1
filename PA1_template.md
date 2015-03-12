@@ -105,7 +105,7 @@ print (tbl,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Mar 12 06:12:43 2015 -->
+<!-- Thu Mar 12 07:39:50 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 1.0
  Steps by date </caption>
@@ -179,9 +179,29 @@ Create and display histogram
 ```r
 par(mfrow = c(1,1))
 hist1 <- hist(activity_raw_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day", col="red", ylim=c(0,25))
+text(11000, 23, "mean 9354",cex = .8)
+text(10500, 21, "median 10395",cex = .8)
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
+
+Report mean and median steps taken per day
+
+```r
+mean(activity_raw_bydate$steps, na.rm=T)
+```
+
+```
+## [1] 9354.23
+```
+
+```r
+median(activity_raw_bydate$steps, na.rm=T)
+```
+
+```
+## [1] 10395
+```
 
 
 ## What is the average daily activity pattern?
@@ -199,7 +219,7 @@ print (tbl2,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Mar 12 06:12:44 2015 -->
+<!-- Thu Mar 12 07:39:51 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 2.0
  Steps by interval </caption>
@@ -251,10 +271,12 @@ plot(x,y, type="l", xlab=" 5-minute interval ",
      ylab="average number of steps taken",
      main="Avg. Steps Taken per Interval - All Days", col= "blue", lwd=2)
 abline(v = 835, h= 206.1698, lty=2, col="red")
+text(900, 2, "interval 835",cex = .8)
+text(1400, 200, "206 steps per interval",cex = .8)
 grid(lwd = 2)
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
 
 ## Imputing missing values
 
@@ -291,7 +313,7 @@ print (tbl3,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Mar 12 06:12:44 2015 -->
+<!-- Thu Mar 12 07:39:51 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 3.0
  Activity without NAs </caption>
@@ -328,7 +350,7 @@ plot(hist1,xlab = "steps per day", main="Total Steps per Day", col="red", ylim=c
 hist2 <- hist(activity_noNA_bydate$steps, breaks=seq(0,25000,2500),xlab = "steps per day", main="Total Steps/Day (imputeds NA's)", col="cornflowerblue", ylim=c(0,30))
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
 
 ```r
 par(op)
@@ -347,7 +369,7 @@ print (tbl4,
 ```
 
 <!-- html table generated in R 3.1.2 by xtable 1.7-4 package -->
-<!-- Thu Mar 12 06:12:45 2015 -->
+<!-- Thu Mar 12 07:39:52 2015 -->
 <table border=1>
 <caption align="bottom"> Fig. 4.0
  Mean and medians with/without NAs </caption>
@@ -368,6 +390,6 @@ activity_no_na_day_byinterval$interval <- as.integer(activity_no_na_day_byinterv
 xyplot(steps_mean ~ interval | day, data=activity_no_na_day_byinterval, type = "l", layout = c(1, 2),ylab="avg. number steps", main="Average Steps by Five Minute Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
 
 
